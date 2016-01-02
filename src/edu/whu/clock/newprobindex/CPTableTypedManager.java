@@ -80,7 +80,7 @@ public class CPTableTypedManager {
 				}
 				}
 			}
-			if (i % 1 == 0) {
+			if (i % 100 == 0) {
 				System.out.print("#" + i + " is done.");
 			}
 		}
@@ -137,6 +137,7 @@ public class CPTableTypedManager {
 		cpTable = new HashMap<String, Double>();
 		BufferedReader br = null;
 		try {
+//			br = new BufferedReader(new FileReader(dir + "/cptable_file2.txt"));
 			br = new BufferedReader(new FileReader(dir + "/edge_cptable_file.txt"));
 			String line = null;
 			String[] elements = null;

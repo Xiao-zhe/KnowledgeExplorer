@@ -8,7 +8,6 @@ public class PKIndexTypedEntryBinding extends TupleBinding<PKIndexTypedEntry> {
 
 	public void objectToEntry(PKIndexTypedEntry pk, TupleOutput out) {
 		int length = pk.length();
-	
 		out.writeInt(length);
 		for (int i = 0; i < length; i++) {
 			

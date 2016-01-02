@@ -7,11 +7,11 @@ import edu.whu.clock.newprobindex.CPTableTypedManager;
 import edu.whu.clock.newprobindex.EntityIndex;
 import edu.whu.clock.newprobindex.FNSetManager;
 import edu.whu.clock.newprobindex.PKIndexManager;
-import edu.whu.clock.newprobindex.PKIndexTypedEntry;
 
 public class GraphManager {
 
 	public final static String GRAPH_FILE_DIR = "D:/experiment data/knowledge graph explorer/dbpedia-old/clean";
+//	public final static String INDEX_DB_DIR = "D:/experiment data/knowledge graph explorer/dbpedia-old/6.8 pk-indexdb";
 	public final static String INDEX_DB_DIR = "D:/experiment data/knowledge graph explorer/dbpedia-old/pk-indexdb";
 	public final static String EI_INDEX_DB_DIR = "D:/experiment data/knowledge graph explorer/dbpedia-old/ei-indexdb";
 	public final static String CPTABLE_FILE_DIR = "D:/experiment data/knowledge graph explorer/dbpedia-old/cptable";
@@ -25,7 +25,7 @@ public class GraphManager {
 	public EntityGraph entityGraph;
 	public EntityGraphTyped entityGraphTyped;
 	public CPTableTypedManager cpTableTyped;
-	public static PKIndexManager pkIndex;
+	public PKIndexManager pkIndex;
 	public FNSetManager fnSet;
 	public EntityIndex eiIndex;
 
@@ -187,7 +187,6 @@ public class GraphManager {
 		System.out.println("Time exhausted: " + (end.getTime()-start.getTime()) + " msec");
 	}
 
-	@SuppressWarnings("static-access")
 	public static void main(String[] args) {
 		GraphManager gm = new GraphManager();
 		gm.genClassManager();
@@ -208,7 +207,6 @@ public class GraphManager {
 //		gm.cpTableTyped.writeToFile(GraphManager.CPTABLE_FILE_DIR);
 		gm.genPKIndexManager(true);
 		gm.initPKIndexManager();
-	    PKIndexTypedEntry entry = pkIndex.get("frank");
 		gm.pkIndex.close();
 	}
 

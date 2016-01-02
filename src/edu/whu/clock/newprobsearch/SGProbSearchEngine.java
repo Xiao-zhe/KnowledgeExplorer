@@ -237,6 +237,78 @@ public class SGProbSearchEngine {
 			testResultWriter.newLine();
 		}
 	}
+	
+	public void randomComparisonTest(String[] key,int radix, int series, int queryMaxSize)
+			throws IOException {
+		String[] keywords = key;
+		System.out.println(Arrays.toString(keywords));
+		testResultWriter.write(Arrays.toString(keywords));
+		testResultWriter.newLine();
+		int num1 = 0, num2 = 0, num3 = 0;
+		int success1 = 0, success2 = 0, success3 = 0;
+		int position1 = 0, position2 = 0, position3 = 0;
+		Date start = new Date();
+		UnfoldedPatternTree_ET[] result1 = psAlgorithm_fnns.run(keywords, radix*series, needLog);
+		Date end = new Date();
+		long time1 = end.getTime()-start.getTime();
+		start = new Date();
+		UnfoldedPatternTree_ET[] result2 = psAlgorithm.run(keywords, radix*series, needLog);
+		end = new Date();
+		long time2 = end.getTime()-start.getTime();
+		start = new Date();
+		UnfoldedPatternTree_ET[] result3 = nsAlgorithm.run(keywords, radix*series, needLog);
+		end = new Date();
+		long time3 = end.getTime()-start.getTime();
+		testResultWriter.write("<response time: " + time1 + " | "
+				+ time2 + " | " + time3 + ">");
+		testResultWriter.newLine();
+		for (int i = 0; i < series; i++) {
+			testResultWriter.write("searching top-" + radix*(i+1));
+			testResultWriter.newLine();
+			for (int j = radix*i; j < radix*(i+1); j++) {
+				if (result1[j] == null) continue;
+				num1++;
+				if (verify(keywords, result1[j])) {
+					success1++;
+					position1 += num1;
+				}
+				System.out.println("[1]: " + j + " verified");
+			}
+			double successRate1 = (double) success1 / num1;
+			double positionAvg1 = (double) position1 / success1;
+			
+			for (int j = radix*i; j < radix*(i+1); j++) {
+				if (result2[j] == null) continue;
+				num2++;
+				if (verify(keywords, result2[j])) {
+					success2++;
+					position2 += num2;
+				}
+				System.out.println("[2]: " + j + " verified");
+			}
+			double successRate2 = (double) success2 / num2;
+			double positionAvg2 = (double) position2 / success2;
+			
+			for (int j = radix*i; j < radix*(i+1); j++) {
+				if (result3[j] == null) continue;
+				num3++;
+				if (verify(keywords, result3[j])) {
+					success3++;
+					position3 += num3;
+				}
+				System.out.println("[3]: " + j + " verified");
+			}
+			double successRate3 = (double) success3 / num3;
+			double positionAvg3 = (double) position3 / success3;
+
+			testResultWriter.write("<success rate: " + successRate1 + " | "
+					+ successRate2 + " | " + successRate3 + ">");
+			testResultWriter.newLine();
+			testResultWriter.write("<position avg: " + positionAvg1 + " | "
+					+ positionAvg2 + " | " + positionAvg3 + ">");
+			testResultWriter.newLine();
+		}
+	}
 
 	public void comparisonTest(String[] keywords, int k) throws IOException {
 		testResultWriter.write(Arrays.toString(keywords));
@@ -421,10 +493,14 @@ public class SGProbSearchEngine {
 			se.initTestResultWriter();
 			// se.setTestResultWriter(new BufferedWriter(new
 			// FileWriter(RESULT_FILE_DIR+"result.txt")));
-//			se.comparisonTest(KeywordQueryManager.QUERIES[6], 10);
-			for (int i = 0; i < 50; i++) {
+//			se.comparisonTest(KeywordQueryManager.QUERIES, 10);
+//			for (int i = 0; i <KeywordQueryManager.QUERIES.length; i++) {
+//				System.out.println("query #" + i);
+//				se.randomComparisonTest(KeywordQueryManager.QUERIES[i],5, 3, 3);
+//			}
+			for (int i = 0; i <20; i++) {
 				System.out.println("query #" + i);
-				se.randomComparisonTest(5, 8, 3);
+				se.randomComparisonTest(5, 3, 3);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

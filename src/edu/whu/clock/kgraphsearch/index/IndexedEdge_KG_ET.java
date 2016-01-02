@@ -1,43 +1,32 @@
-package edu.whu.clock.newprobindex;
+package edu.whu.clock.kgraphsearch.index;
 
+public class IndexedEdge_KG_ET implements Comparable<IndexedEdge_KG_ET> {
 
-public class IndexedEdgeTyped implements Comparable<IndexedEdgeTyped> {
-	private short start;
-	private short end;
+	private int start;
+	private int end;
 	private short type;
 	private boolean out;
-	private double prob;
 
-	public IndexedEdgeTyped(short start, short end, short type, boolean out,
-			double prob) {
+	public IndexedEdge_KG_ET(int start, int end, short type, boolean out) {
 		this.start = start;
 		this.end = end;
 		this.type = type;
 		this.out = out;
-		this.prob = prob;
-	}
-	
-	public IndexedEdgeTyped(short start, short end, short type, boolean out) {
-		this.start = start;
-		this.end = end;
-		this.type = type;
-		this.out = out;
-		this.prob = 0.0d;
 	}
 
-	public short getStart() {
+	public int getStart() {
 		return start;
 	}
 
-	public void setStart(short start) {
+	public void setStart(int start) {
 		this.start = start;
 	}
 
-	public short getEnd() {
+	public int getEnd() {
 		return end;
 	}
 
-	public void setEnd(short end) {
+	public void setEnd(int end) {
 		this.end = end;
 	}
 
@@ -57,14 +46,6 @@ public class IndexedEdgeTyped implements Comparable<IndexedEdgeTyped> {
 		this.out = out;
 	}
 
-	public double getProb() {
-		return prob;
-	}
-
-	public void setProb(double prob) {
-		this.prob = prob;
-	}
-
 	@Override
 	public boolean equals(Object o) {
 		if (o == null) {
@@ -76,7 +57,7 @@ public class IndexedEdgeTyped implements Comparable<IndexedEdgeTyped> {
 		if (getClass() != o.getClass()) {
 			return false;
 		}
-		IndexedEdgeTyped edge = (IndexedEdgeTyped) o;
+		IndexedEdge_KG_ET edge = (IndexedEdge_KG_ET) o;
 		return this.getStart() == edge.getStart()
 				&& this.getEnd() == edge.getEnd()
 				&& this.getType() == edge.getType()
@@ -85,7 +66,7 @@ public class IndexedEdgeTyped implements Comparable<IndexedEdgeTyped> {
 	}
 
 	@Override
-	public int compareTo(IndexedEdgeTyped other) {
+	public int compareTo(IndexedEdge_KG_ET other) {
 		if (start > other.getStart()) {
 			return 1;
 		}
