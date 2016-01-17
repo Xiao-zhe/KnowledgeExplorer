@@ -6,19 +6,19 @@ import edu.whu.clock.graphsearch.util.FibonacciHeapPQ;
 import edu.whu.clock.graphsearch.util.UnderflowException;
 import edu.whu.clock.newgraph.SummaryGraphEdgeTyped;
 import edu.whu.clock.newgraph.SummaryGraphTyped;
-import edu.whu.clock.newprobindex.CPTableTypedManager;
+import edu.whu.clock.newprobindex.CPTableTypedManager_EdgeCount;
 
 public class SearchPathTypedPQ implements Comparable<SearchPathTypedPQ> {
 
 	private final int keywordID;
 	private final SummaryGraphTyped graph;
-	private final CPTableTypedManager cpTable;
+	private final CPTableTypedManager_EdgeCount cpTable;
 	private FibonacciHeapPQ<SearchPathTyped> queue;
 	
 	private int pathNum = 0;
 	private boolean limited = false;
 	
-	public SearchPathTypedPQ(int keywordID, SummaryGraphTyped graph, CPTableTypedManager cpTable) {
+	public SearchPathTypedPQ(int keywordID, SummaryGraphTyped graph, CPTableTypedManager_EdgeCount cpTable) {
 		super();
 		this.keywordID = keywordID;
 		this.graph = graph;

@@ -50,6 +50,7 @@ public class InstanceManager implements Serializable {
 				}
 				id++;
 			}
+			System.out.println("Num of entities: " + id);
 			id2instance = instanceList.toArray(new String[instanceList.size()]);
 			instance2class = new short[classList.size()];
 			for (int i = 0; i < classList.size(); i++) {
@@ -98,21 +99,19 @@ public class InstanceManager implements Serializable {
 
 	public static void main(String[] args) throws IOException,
 			ClassNotFoundException {
-//		FileInputStream fis = new FileInputStream(
-//				"D:/SerializedFile/ClassManager.ser");
-//		ObjectInputStream ois = new ObjectInputStream(fis);
-//		ClassManager cla = (ClassManager) ois.readObject();
-//		ois.close();
+		FileInputStream fis = new FileInputStream(
+				"D:/SerializedFile/ClassManager.ser");
+		ObjectInputStream ois = new ObjectInputStream(fis);
+		ClassManager cla = (ClassManager) ois.readObject();
+		ois.close();
 		// instanceManager.load("D:/testing example", cla);
-		ClassManager cla = new ClassManager();
-		cla.load("D:/dbpedia/clean");
 		InstanceManager instanceManager = new InstanceManager();
 		instanceManager.load("D:/dbpedia/clean", cla);
-//		FileOutputStream fos = new FileOutputStream(
-//				"D:/SerializedFile/InstanceManager.ser");
-//		ObjectOutputStream oos = new ObjectOutputStream(fos);
-//		oos.writeObject(instanceManager);
-//		oos.close();
+		FileOutputStream fos = new FileOutputStream(
+				"D:/SerializedFile/InstanceManager.ser");
+		ObjectOutputStream oos = new ObjectOutputStream(fos);
+		oos.writeObject(instanceManager);
+		oos.close();
 
 	}
 }

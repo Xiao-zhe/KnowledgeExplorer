@@ -1,6 +1,7 @@
 package edu.whu.clock.newgraphmatch;
 
 import edu.whu.clock.generalsearch.UnfoldedPatternTree_ET;
+import edu.whu.clock.newgraph.EntityGraphTyped;
 
 public class ResultTreeTyped {
 
@@ -52,5 +53,24 @@ public class ResultTreeTyped {
 	
 	public void setMatched(int index, boolean b) {
 		matched[index] = b;
+	}
+	
+	public String getString(EntityGraphTyped graph) {
+		String str = "{" + graph.getInstanceManager().getClassID(getRoot()) + "." + getRoot() + "."
+				+ graph.getInstanceManager().getInstanceName(getRoot())
+				+ " --- ";
+		str += "\r\n";
+		for (int[] path : paths) {
+			str += "[";
+			for (int i = 0; i < path.length - 1; i++) {
+				str +=  graph.getInstanceManager().getClassID(path[i]) + "." + path[i]
+						+ "."
+						+ graph.getInstanceManager().getInstanceName(path[i]);
+			}
+			str += graph.getInstanceManager().getClassID(path[path.length - 1]) + "." + path[path.length - 1] + "."
+					+ graph.getInstanceManager().getInstanceName(path[path.length - 1]) + "]";
+			str += "\r\n";
+		}
+		return str;
 	}
 }

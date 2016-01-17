@@ -38,6 +38,7 @@ public class UnfoldedPatternTree_ET {
 		String str = getScore() + " £º {" + getRoot() + "."
 				+ graph.classManager.getClassName(getRoot())
 				+ " --- ";
+		str += "\r\n";
 		for (SearchPath_ET path : paths) {
 			str += "[";
 			for (int i = 0; i < path.nodeNum() - 1; i++) {
@@ -53,6 +54,7 @@ public class UnfoldedPatternTree_ET {
 			}
 			str += path.getNode(path.nodeNum() - 1) + "."
 					+ graph.classManager.getClassName(path.getNode(path.nodeNum() - 1)) + "]";
+			str += "\r\n";
 		}
 		return str;
 	}

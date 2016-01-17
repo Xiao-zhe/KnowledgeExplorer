@@ -9,14 +9,14 @@ import edu.whu.clock.graphsearch.util.UnderflowException;
 import edu.whu.clock.kgraphsearch.index.IndexedEdge_KG_ET;
 import edu.whu.clock.kgraphsearch.index.KeywordIndexEntry_KG_ET;
 import edu.whu.clock.newgraph.EntityGraphTyped;
-import edu.whu.clock.newprobindex.PKIndexManager;
+import edu.whu.clock.newprobindex.PKIndexManager_EdgeCount;
 
 public class SimpleSearchAlgorithm_KG_ET {
 
 	public final String logDir;
 	
 	private final EntityGraphTyped graph;
-	private final PKIndexManager pkIndex;
+	private final PKIndexManager_EdgeCount pkIndex;
 	private BufferedWriter logWriter;
 
 	private int keywordNum;
@@ -28,7 +28,7 @@ public class SimpleSearchAlgorithm_KG_ET {
 	public long visitTimes = 0;
 	public long stopTimes = 0; 
 
-	public SimpleSearchAlgorithm_KG_ET(EntityGraphTyped graph, PKIndexManager pkIndex, String logDir) throws IOException {
+	public SimpleSearchAlgorithm_KG_ET(EntityGraphTyped graph, PKIndexManager_EdgeCount pkIndex, String logDir) throws IOException {
 		this.graph = graph;
 		this.pkIndex = pkIndex;
 		this.logDir = logDir;
@@ -36,7 +36,7 @@ public class SimpleSearchAlgorithm_KG_ET {
 		logWriter = new BufferedWriter(new FileWriter(logDir + "KG simple search.txt"));
 	}
 
-	public SimpleSearchAlgorithm_KG_ET(EntityGraphTyped graph, PKIndexManager pkIndex) {
+	public SimpleSearchAlgorithm_KG_ET(EntityGraphTyped graph, PKIndexManager_EdgeCount pkIndex) {
 		this.graph = graph;
 		this.pkIndex = pkIndex;
 		this.logDir = null;

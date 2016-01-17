@@ -11,10 +11,10 @@ import java.util.ListIterator;
 import edu.whu.clock.generalsearch.UnfoldedPatternTree_ET;
 import edu.whu.clock.graphsearch.util.UnderflowException;
 import edu.whu.clock.newgraph.SummaryGraphTyped;
-import edu.whu.clock.newprobindex.CPTableTypedManager;
+import edu.whu.clock.newprobindex.CPTableTypedManager_EdgeCount;
 import edu.whu.clock.newprobindex.FNSetManager;
 import edu.whu.clock.newprobindex.IndexedEdgeTyped;
-import edu.whu.clock.newprobindex.PKIndexManager;
+import edu.whu.clock.newprobindex.PKIndexManager_EdgeCount;
 import edu.whu.clock.newprobindex.PKIndexTypedEntry;
 
 public class JointProbTopkSearchAlgorithm_SG_ET {
@@ -22,8 +22,8 @@ public class JointProbTopkSearchAlgorithm_SG_ET {
 	public final String logDir;
 	
 	private final SummaryGraphTyped graph;
-	private final PKIndexManager pkIndex;
-	private final CPTableTypedManager cpTable;
+	private final PKIndexManager_EdgeCount pkIndex;
+	private final CPTableTypedManager_EdgeCount cpTable;
 	private final FNSetManager fnSet;
 	private BufferedWriter logWriter;
 
@@ -39,7 +39,7 @@ public class JointProbTopkSearchAlgorithm_SG_ET {
 	public long visitTimes = 0;
 	public long stopTimes = 0;
 	
-	public JointProbTopkSearchAlgorithm_SG_ET(SummaryGraphTyped graph, PKIndexManager pkIndex, CPTableTypedManager cpTable, FNSetManager fnSet, String logDir) throws IOException {
+	public JointProbTopkSearchAlgorithm_SG_ET(SummaryGraphTyped graph, PKIndexManager_EdgeCount pkIndex, CPTableTypedManager_EdgeCount cpTable, FNSetManager fnSet, String logDir) throws IOException {
 		this.graph = graph;
 		this.pkIndex = pkIndex;
 		this.cpTable = cpTable;
@@ -49,7 +49,7 @@ public class JointProbTopkSearchAlgorithm_SG_ET {
 		logWriter = new BufferedWriter(new FileWriter(logDir + "SG joint prob topk search.txt"));
 	}
 	
-	public JointProbTopkSearchAlgorithm_SG_ET(SummaryGraphTyped graph, PKIndexManager pkIndex, CPTableTypedManager cpTable, FNSetManager fnSet) {
+	public JointProbTopkSearchAlgorithm_SG_ET(SummaryGraphTyped graph, PKIndexManager_EdgeCount pkIndex, CPTableTypedManager_EdgeCount cpTable, FNSetManager fnSet) {
 		this.graph = graph;
 		this.pkIndex = pkIndex;
 		this.cpTable = cpTable;

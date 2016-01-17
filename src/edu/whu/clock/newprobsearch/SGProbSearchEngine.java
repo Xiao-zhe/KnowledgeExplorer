@@ -1,6 +1,7 @@
 package edu.whu.clock.newprobsearch;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
@@ -8,6 +9,7 @@ import java.util.Date;
 
 import edu.whu.clock.generalsearch.SearchPath_ET;
 import edu.whu.clock.generalsearch.UnfoldedPatternTree_ET;
+import edu.whu.clock.kgraphsearch.SimpleSearchAlgorithm_KG_ET;
 import edu.whu.clock.naivesearch_et.SGNaiveSearchAlgorithm_ET;
 import edu.whu.clock.newgraph.GraphManager;
 import edu.whu.clock.newgraphmatch.ResultTreeTyped;
@@ -16,15 +18,18 @@ import edu.whu.clock.newgraphmatch.RevisedVF2Algorithm;
 public class SGProbSearchEngine {
 
 	public static final String RESULT_FILE_DIR = "D:/experiment data/knowledge graph explorer/dbpedia-old/result_file/";
-	public static final String KEYS_FILE = "D:/experiment data/knowledge graph explorer/dbpedia-old/keys/";
+	public static final String LOG_FILE_DIR = "D:/experiment data/knowledge graph explorer/dbpedia-old/search logs/";
+	
+	private SimpleSearchAlgorithm_KG_ET ssAlgorithm;
 	private SGProbSearchTypedAlgorithm psAlgorithm;
 	private SGProbSearchTypedAlgorithm psAlgorithm_fnns;
+	private JointProbTopkSearchAlgorithm_SG_ET jpsAlgorithm;
 	private SGNaiveSearchAlgorithm_ET nsAlgorithm;
 	private RevisedVF2Algorithm gmAlgorithm;
 	private GraphManager graphManager;
 	private BufferedWriter testResultWriter;
 
-	private boolean needLog = false;
+	private boolean needLog = true;
 
 	public SGProbSearchEngine(GraphManager graphManager) {
 		this.graphManager = graphManager;
@@ -39,49 +44,71 @@ public class SGProbSearchEngine {
 		graphManager.genEdgeTypeManager();
 		graphManager.genSummaryGraphTyped();
 		graphManager.genEntityGraphTyped();
-		graphManager.initPKIndexManager();
+		graphManager.initPKIndexManager_EdgeCount();
 		graphManager.loadCPTableTypedManager();
-		graphManager.initEntityInvertedIndexManager();
 		graphManager.loadFNSetManager();
-		psAlgorithm_fnns = new SGProbSearchTypedAlgorithm(
-				graphManager.summaryGraphTyped, graphManager.pkIndex,
-				graphManager.cpTableTyped, graphManager.fnSet);
-		psAlgorithm = new SGProbSearchTypedAlgorithm(
-				graphManager.summaryGraphTyped, graphManager.pkIndex,
-				graphManager.cpTableTyped);
-		nsAlgorithm = new SGNaiveSearchAlgorithm_ET(
-				graphManager.summaryGraphTyped, graphManager.pkIndex);
-		gmAlgorithm = new RevisedVF2Algorithm(graphManager);
-	}
 
-	public void init(boolean needFNSet) {
-		graphManager.genClassManager();
-		graphManager.genInstanceManager();
-		graphManager.genEdgeTypeManager();
-		graphManager.genSummaryGraphTyped();
-		graphManager.genEntityGraphTyped();
-		graphManager.initPKIndexManager();
-		// graphManager.genPKIndexManager(true);
-		graphManager.loadCPTableTypedManager();
-		graphManager.initEntityInvertedIndexManager();
-
-		nsAlgorithm = new SGNaiveSearchAlgorithm_ET(
-				graphManager.summaryGraphTyped, graphManager.pkIndex);
-		if (needFNSet) {
-			graphManager.loadFNSetManager();
+		Date now = new Date();
+		String logDir = LOG_FILE_DIR + now.toString().replace(":", "-") + "/";
+		File dir = new File(logDir);
+		if (!dir.mkdir()) {
+			System.out.println("Error: cannot make the log dir.");
+			return;
+		}
+		try {
+			ssAlgorithm = new SimpleSearchAlgorithm_KG_ET(graphManager.entityGraphTyped, graphManager.pkIndex, logDir);
+			jpsAlgorithm = new JointProbTopkSearchAlgorithm_SG_ET(
+					graphManager.summaryGraphTyped, graphManager.pkIndex,
+					graphManager.cpTableTyped, graphManager.fnSet, logDir);
+			psAlgorithm_fnns = new SGProbSearchTypedAlgorithm(
+					graphManager.summaryGraphTyped, graphManager.pkIndex,
+					graphManager.cpTableTyped, graphManager.fnSet, logDir);
 			psAlgorithm = new SGProbSearchTypedAlgorithm(
 					graphManager.summaryGraphTyped, graphManager.pkIndex,
-					graphManager.cpTableTyped, graphManager.fnSet);
-		} else {
-			psAlgorithm = new SGProbSearchTypedAlgorithm(
-					graphManager.summaryGraphTyped, graphManager.pkIndex,
-					graphManager.cpTableTyped);
+					graphManager.cpTableTyped, logDir);
+			nsAlgorithm = new SGNaiveSearchAlgorithm_ET(
+					graphManager.summaryGraphTyped, graphManager.pkIndex, logDir);
+			gmAlgorithm = new RevisedVF2Algorithm(graphManager, logDir);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			return;
 		}
 	}
 
+//	public void init(boolean needFNSet) {
+//		graphManager.genClassManager();
+//		graphManager.genInstanceManager();
+//		graphManager.genEdgeTypeManager();
+//		graphManager.genSummaryGraphTyped();
+//		graphManager.genEntityGraphTyped();
+//		graphManager.initPKIndexManager();
+//		// graphManager.genPKIndexManager(true);
+//		graphManager.loadCPTableTypedManager();
+////		graphManager.initEntityInvertedIndexManager();
+//
+//		nsAlgorithm = new SGNaiveSearchAlgorithm_ET(
+//				graphManager.summaryGraphTyped, graphManager.pkIndex);
+//		if (needFNSet) {
+//			graphManager.loadFNSetManager();
+//			psAlgorithm = new SGProbSearchTypedAlgorithm(
+//					graphManager.summaryGraphTyped, graphManager.pkIndex,
+//					graphManager.cpTableTyped, graphManager.fnSet);
+//		} else {
+//			psAlgorithm = new SGProbSearchTypedAlgorithm(
+//					graphManager.summaryGraphTyped, graphManager.pkIndex,
+//					graphManager.cpTableTyped);
+//		}
+//	}
+
 	public void shutdown() throws IOException {
+		if (gmAlgorithm != null) gmAlgorithm.closeLogWriter();
+		if (jpsAlgorithm != null) jpsAlgorithm.closeLogWriter();
+		if (psAlgorithm_fnns != null) psAlgorithm_fnns.closeLogWriter();
+		if (psAlgorithm != null) psAlgorithm.closeLogWriter();
+		if (nsAlgorithm != null) nsAlgorithm.closeLogWriter();
+		if (ssAlgorithm != null) ssAlgorithm.closeLogWriter();
 		if (graphManager.pkIndex != null) graphManager.pkIndex.close();
-		if (graphManager.eiIndex != null) graphManager.eiIndex.close();
 		if (testResultWriter != null) testResultWriter.close();
 	}
 
@@ -169,26 +196,35 @@ public class SGProbSearchEngine {
 			throws IOException {
 		String[] keywords = KeywordQueryManager
 				.randomKeywordQuery(queryMaxSize);
+		ssAlgorithm.run(keywords, radix*series);
+		int x = ssAlgorithm.numOfResult();
+		testResultWriter.write("number of real answers: " + x);
+		testResultWriter.newLine();
+		if (x == 0) return;
 		System.out.println(Arrays.toString(keywords));
 		testResultWriter.write(Arrays.toString(keywords));
 		testResultWriter.newLine();
-		int num1 = 0, num2 = 0, num3 = 0;
-		int success1 = 0, success2 = 0, success3 = 0;
-		int position1 = 0, position2 = 0, position3 = 0;
+		int num1 = 0, num2 = 0, num3 = 0, num4 = 0;
+		int success1 = 0, success2 = 0, success3 = 0, success4 = 0;
+		int position1 = 0, position2 = 0, position3 = 0, position4 = 0;
 		Date start = new Date();
-		UnfoldedPatternTree_ET[] result1 = psAlgorithm_fnns.run(keywords, radix*series, needLog);
+		UnfoldedPatternTree_ET[] result1 = jpsAlgorithm.run(keywords, radix*series, needLog);
 		Date end = new Date();
 		long time1 = end.getTime()-start.getTime();
 		start = new Date();
-		UnfoldedPatternTree_ET[] result2 = psAlgorithm.run(keywords, radix*series, needLog);
+		UnfoldedPatternTree_ET[] result2 = psAlgorithm_fnns.run(keywords, radix*series, needLog);
 		end = new Date();
 		long time2 = end.getTime()-start.getTime();
 		start = new Date();
-		UnfoldedPatternTree_ET[] result3 = nsAlgorithm.run(keywords, radix*series, needLog);
+		UnfoldedPatternTree_ET[] result3 = psAlgorithm.run(keywords, radix*series, needLog);
 		end = new Date();
 		long time3 = end.getTime()-start.getTime();
+		start = new Date();
+		UnfoldedPatternTree_ET[] result4 = nsAlgorithm.run(keywords, radix*series, needLog);
+		end = new Date();
+		long time4 = end.getTime()-start.getTime();
 		testResultWriter.write("<response time: " + time1 + " | "
-				+ time2 + " | " + time3 + ">");
+				+ time2 + " | " + time3 + " | " + time4 + ">");
 		testResultWriter.newLine();
 		for (int i = 0; i < series; i++) {
 			testResultWriter.write("searching top-" + radix*(i+1));
@@ -228,135 +264,115 @@ public class SGProbSearchEngine {
 			}
 			double successRate3 = (double) success3 / num3;
 			double positionAvg3 = (double) position3 / success3;
-
-			testResultWriter.write("<success rate: " + successRate1 + " | "
-					+ successRate2 + " | " + successRate3 + ">");
-			testResultWriter.newLine();
-			testResultWriter.write("<position avg: " + positionAvg1 + " | "
-					+ positionAvg2 + " | " + positionAvg3 + ">");
-			testResultWriter.newLine();
-		}
-	}
-	
-	public void randomComparisonTest(String[] key,int radix, int series, int queryMaxSize)
-			throws IOException {
-		String[] keywords = key;
-		System.out.println(Arrays.toString(keywords));
-		testResultWriter.write(Arrays.toString(keywords));
-		testResultWriter.newLine();
-		int num1 = 0, num2 = 0, num3 = 0;
-		int success1 = 0, success2 = 0, success3 = 0;
-		int position1 = 0, position2 = 0, position3 = 0;
-		Date start = new Date();
-		UnfoldedPatternTree_ET[] result1 = psAlgorithm_fnns.run(keywords, radix*series, needLog);
-		Date end = new Date();
-		long time1 = end.getTime()-start.getTime();
-		start = new Date();
-		UnfoldedPatternTree_ET[] result2 = psAlgorithm.run(keywords, radix*series, needLog);
-		end = new Date();
-		long time2 = end.getTime()-start.getTime();
-		start = new Date();
-		UnfoldedPatternTree_ET[] result3 = nsAlgorithm.run(keywords, radix*series, needLog);
-		end = new Date();
-		long time3 = end.getTime()-start.getTime();
-		testResultWriter.write("<response time: " + time1 + " | "
-				+ time2 + " | " + time3 + ">");
-		testResultWriter.newLine();
-		for (int i = 0; i < series; i++) {
-			testResultWriter.write("searching top-" + radix*(i+1));
-			testResultWriter.newLine();
-			for (int j = radix*i; j < radix*(i+1); j++) {
-				if (result1[j] == null) continue;
-				num1++;
-				if (verify(keywords, result1[j])) {
-					success1++;
-					position1 += num1;
-				}
-				System.out.println("[1]: " + j + " verified");
-			}
-			double successRate1 = (double) success1 / num1;
-			double positionAvg1 = (double) position1 / success1;
 			
 			for (int j = radix*i; j < radix*(i+1); j++) {
-				if (result2[j] == null) continue;
-				num2++;
-				if (verify(keywords, result2[j])) {
-					success2++;
-					position2 += num2;
+				if (result4[j] == null) continue;
+				num4++;
+				if (verify(keywords, result4[j])) {
+					success4++;
+					position4 += num4;
 				}
-				System.out.println("[2]: " + j + " verified");
+				System.out.println("[4]: " + j + " verified");
 			}
-			double successRate2 = (double) success2 / num2;
-			double positionAvg2 = (double) position2 / success2;
-			
-			for (int j = radix*i; j < radix*(i+1); j++) {
-				if (result3[j] == null) continue;
-				num3++;
-				if (verify(keywords, result3[j])) {
-					success3++;
-					position3 += num3;
-				}
-				System.out.println("[3]: " + j + " verified");
-			}
-			double successRate3 = (double) success3 / num3;
-			double positionAvg3 = (double) position3 / success3;
+			double successRate4 = (double) success4 / num4;
+			double positionAvg4 = (double) position4 / success4;
 
 			testResultWriter.write("<success rate: " + successRate1 + " | "
-					+ successRate2 + " | " + successRate3 + ">");
+					+ successRate2 + " | " + successRate3 + " | " + successRate4 + ">");
 			testResultWriter.newLine();
 			testResultWriter.write("<position avg: " + positionAvg1 + " | "
-					+ positionAvg2 + " | " + positionAvg3 + ">");
+					+ positionAvg2 + " | " + positionAvg3 + " | " + positionAvg4 + ">");
 			testResultWriter.newLine();
 		}
 	}
 
 	public void comparisonTest(String[] keywords, int k) throws IOException {
+		ssAlgorithm.run(keywords, k);
+		int x = ssAlgorithm.numOfResult();
+		testResultWriter.write("number of real answers: " + x);
+		testResultWriter.newLine();
+		if (x == 0) return;
+		System.out.println(Arrays.toString(keywords));
 		testResultWriter.write(Arrays.toString(keywords));
+		testResultWriter.newLine();
+		int num1 = 0, num2 = 0, num3 = 0, num4 = 0;
+		int success1 = 0, success2 = 0, success3 = 0, success4 = 0;
+		int position1 = 0, position2 = 0, position3 = 0, position4 = 0;
+		Date start = new Date();
+		UnfoldedPatternTree_ET[] result1 = jpsAlgorithm.run(keywords, k, needLog);
+		Date end = new Date();
+		long time1 = end.getTime()-start.getTime();
+		start = new Date();
+		UnfoldedPatternTree_ET[] result2 = psAlgorithm_fnns.run(keywords, k, needLog);
+		end = new Date();
+		long time2 = end.getTime()-start.getTime();
+		start = new Date();
+		UnfoldedPatternTree_ET[] result3 = psAlgorithm.run(keywords, k, needLog);
+		end = new Date();
+		long time3 = end.getTime()-start.getTime();
+		start = new Date();
+		UnfoldedPatternTree_ET[] result4 = nsAlgorithm.run(keywords, k, needLog);
+		end = new Date();
+		long time4 = end.getTime()-start.getTime();
+		testResultWriter.write("<response time: " + time1 + " | "
+				+ time2 + " | " + time3 + " | " + time4 + ">");
 		testResultWriter.newLine();
 		testResultWriter.write("searching top-" + k);
 		testResultWriter.newLine();
-		UnfoldedPatternTree_ET[] result = psAlgorithm.run(keywords, k, needLog);
-		int num = 0;
-		int success = 0;
-		int position = 0;
-		testResultWriter.write("");
-		for (UnfoldedPatternTree_ET queryGraph : result) {
-			if (queryGraph != null) {
-				num++;
-				System.out.println("Top-" + num);
-				System.out.println(queryGraph
-						.getString(graphManager.summaryGraphTyped));
-				if (verify(keywords, queryGraph)) {
-					success++;
-					position += num;
-				}
-				System.out.println("---------------------");
+		for (int j = 0; j < k; j++) {
+			if (result1[j] == null) continue;
+			num1++;
+			if (verify(keywords, result1[j])) {
+				success1++;
+				position1 += num1;
 			}
+			System.out.println("[1]: " + j + " verified");
 		}
-		double successRate1 = (double) success / num;
-		double positionAvg1 = (double) position / success;
-		num = 0;
-		success = 0;
-		position = 0;
-		UnfoldedPatternTree_ET[] ns = nsAlgorithm.run(keywords, k, needLog);
-		for (UnfoldedPatternTree_ET queryGraph : ns) {
-			if (queryGraph != null) {
-				num++;
-				System.out.println("Top-" + num);
-				System.out.println(queryGraph
-						.getString(graphManager.summaryGraphTyped));
-				if (verify(keywords, queryGraph)) {
-					success++;
-					position += num;
-				}
-				System.out.println("---------------------");
+		double successRate1 = (double) success1 / num1;
+		double positionAvg1 = (double) position1 / success1;
+		
+		for (int j = 0; j < k; j++) {
+			if (result2[j] == null) continue;
+			num2++;
+			if (verify(keywords, result2[j])) {
+				success2++;
+				position2 += num2;
 			}
+			System.out.println("[2]: " + j + " verified");
 		}
-		double successRate2 = (double) success / num;
-		double positionAvg2 = (double) position / success;
-		testResultWriter.write(" <success rate: " + successRate1 + " vs. "
-				+ successRate2 + "> <position avg: " + positionAvg1 + " vs. "
-				+ positionAvg2 + ">");
+		double successRate2 = (double) success2 / num2;
+		double positionAvg2 = (double) position2 / success2;
+		
+		for (int j = 0; j < k; j++) {
+			if (result3[j] == null) continue;
+			num3++;
+			if (verify(keywords, result3[j])) {
+				success3++;
+				position3 += num3;
+			}
+			System.out.println("[3]: " + j + " verified");
+		}
+		double successRate3 = (double) success3 / num3;
+		double positionAvg3 = (double) position3 / success3;
+		
+		for (int j = 0; j < k; j++) {
+			if (result4[j] == null) continue;
+			num4++;
+			if (verify(keywords, result4[j])) {
+				success4++;
+				position4 += num4;
+			}
+			System.out.println("[4]: " + j + " verified");
+		}
+		double successRate4 = (double) success4 / num4;
+		double positionAvg4 = (double) position4 / success4;
+
+		testResultWriter.write("<success rate: " + successRate1 + " | "
+				+ successRate2 + " | " + successRate3 + " | " + successRate4 + ">");
+		testResultWriter.newLine();
+		testResultWriter.write("<position avg: " + positionAvg1 + " | "
+				+ positionAvg2 + " | " + positionAvg3 + " | " + positionAvg4 + ">");
+		testResultWriter.newLine();
 	}
 
 	public UnfoldedPatternTree_ET[] probSearch(String[] keywords, int k)
@@ -369,7 +385,7 @@ public class SGProbSearchEngine {
 		return nsAlgorithm.run(keywords, k, needLog);
 	}
 
-	public boolean verify(String[] keywords, UnfoldedPatternTree_ET queryGraph) {
+	public boolean verify(String[] keywords, UnfoldedPatternTree_ET queryGraph) throws IOException {
 		ResultTreeTyped result = gmAlgorithm.run(keywords, queryGraph);
 		if (result == null) {
 //			System.out.println("No matched entity tree.");
@@ -493,14 +509,11 @@ public class SGProbSearchEngine {
 			se.initTestResultWriter();
 			// se.setTestResultWriter(new BufferedWriter(new
 			// FileWriter(RESULT_FILE_DIR+"result.txt")));
-//			se.comparisonTest(KeywordQueryManager.QUERIES, 10);
-//			for (int i = 0; i <KeywordQueryManager.QUERIES.length; i++) {
-//				System.out.println("query #" + i);
-//				se.randomComparisonTest(KeywordQueryManager.QUERIES[i],5, 3, 3);
-//			}
-			for (int i = 0; i <20; i++) {
+//			se.comparisonTest(new String[]{"45170", "15663", "wittrockiella"}, 10);
+//			se.comparisonTest(KeywordQueryManager.QUERIES[0], 10);
+			for (int i = 0; i < 10; i++) {
 				System.out.println("query #" + i);
-				se.randomComparisonTest(5, 3, 3);
+				se.randomComparisonTest(10, 1, 4);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

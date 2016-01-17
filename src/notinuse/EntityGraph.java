@@ -213,32 +213,6 @@ public class EntityGraph implements Serializable{
 	return false;
 		
 	}
-	//haveEdge checks that edge(ins1,cla1) in entityGraph or not
-		public boolean haveEdg(int ins1,int cla){
-			EntityGraphEdge head1 = rowEdgeHead.get(ins1);
-			int[] re1 = ;
-			while (re1 != null) {
-				if(ins2==re1.getEnd()){
-					return true;
-				}
-				
-				else{
-				re1 = re1.getNextEdge();
-				}
-				
-			}
-			
-			EntityGraphEdge head2 = rowEdgeHead.get(ins1);
-			EntityGraphEdge re2 = head2.getNextEdge();
-			while (re2 != null) {
-				if(ins1==re2.getEnd())
-					return true;
-				else
-				re2 = re2.getNextEdge();
-			}
-		return false;
-			
-		}
 	
 	
 	public int[] getNeighbors(String source) {  

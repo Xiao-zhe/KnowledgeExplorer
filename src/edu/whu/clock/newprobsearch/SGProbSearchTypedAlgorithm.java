@@ -3,7 +3,6 @@ package edu.whu.clock.newprobsearch;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -12,21 +11,21 @@ import java.util.ListIterator;
 import edu.whu.clock.generalsearch.UnfoldedPatternTree_ET;
 import edu.whu.clock.graphsearch.util.UnderflowException;
 import edu.whu.clock.newgraph.SummaryGraphTyped;
-import edu.whu.clock.newprobindex.CPTableTypedManager;
+import edu.whu.clock.newprobindex.CPTableTypedManager_EdgeCount;
 import edu.whu.clock.newprobindex.FNSetManager;
 import edu.whu.clock.newprobindex.IndexedEdgeTyped;
-import edu.whu.clock.newprobindex.PKIndexManager;
+import edu.whu.clock.newprobindex.PKIndexManager_EdgeCount;
 import edu.whu.clock.newprobindex.PKIndexTypedEntry;
 
 public class SGProbSearchTypedAlgorithm {
-	
-	public static final String LOG_FILE = "D:/experiment data/knowledge graph explorer/dbpedia-old/search logs/";
+
+	public final String logDir;
 	
 	public final boolean needFNSet;
 	
 	private final SummaryGraphTyped graph;
-	private final PKIndexManager pkIndex;
-	private final CPTableTypedManager cpTable;
+	private final PKIndexManager_EdgeCount pkIndex;
+	private final CPTableTypedManager_EdgeCount cpTable;
 	private final FNSetManager fnSet;
 	private BufferedWriter logWriter;
 
@@ -42,30 +41,56 @@ public class SGProbSearchTypedAlgorithm {
 	public long visitTimes = 0;
 	public long stopTimes = 0; 
 
-	public SGProbSearchTypedAlgorithm(SummaryGraphTyped graph, PKIndexManager pkIndex, CPTableTypedManager cpTable) {
+	public SGProbSearchTypedAlgorithm(SummaryGraphTyped graph, PKIndexManager_EdgeCount pkIndex, CPTableTypedManager_EdgeCount cpTable, String logDir) throws IOException {
 		this.graph = graph;
 		this.pkIndex = pkIndex;
 		this.cpTable = cpTable;
 		this.needFNSet = false;
 		this.fnSet = null;
+		this.logDir = logDir;
+		// 如果需要日志就初始化logWriter
+		if (needFNSet == false)
+			logWriter = new BufferedWriter(new FileWriter(logDir + "SG prob topk search.txt"));
+		else
+			logWriter = new BufferedWriter(new FileWriter(logDir + "SG prob topk search with fns filtering.txt"));
 	}
 	
-	public SGProbSearchTypedAlgorithm(SummaryGraphTyped graph, PKIndexManager pkIndex, CPTableTypedManager cpTable, FNSetManager fnSet) {
+	public SGProbSearchTypedAlgorithm(SummaryGraphTyped graph, PKIndexManager_EdgeCount pkIndex, CPTableTypedManager_EdgeCount cpTable) {
+		this.graph = graph;
+		this.pkIndex = pkIndex;
+		this.cpTable = cpTable;
+		this.needFNSet = false;
+		this.fnSet = null;
+		this.logDir = null;
+	}
+	
+	public SGProbSearchTypedAlgorithm(SummaryGraphTyped graph, PKIndexManager_EdgeCount pkIndex, CPTableTypedManager_EdgeCount cpTable, FNSetManager fnSet, String logDir) throws IOException {
 		this.graph = graph;
 		this.pkIndex = pkIndex;
 		this.cpTable = cpTable;
 		this.needFNSet = true;
 		this.fnSet = fnSet;
+		this.logDir = logDir;
+		// 如果需要日志就初始化logWriter
+		if (needFNSet == false)
+			logWriter = new BufferedWriter(new FileWriter(logDir + "SG prob topk search.txt"));
+		else
+			logWriter = new BufferedWriter(new FileWriter(logDir + "SG prob topk search with fns filtering.txt"));
+	}
+	
+	public SGProbSearchTypedAlgorithm(SummaryGraphTyped graph, PKIndexManager_EdgeCount pkIndex, CPTableTypedManager_EdgeCount cpTable, FNSetManager fnSet) {
+		this.graph = graph;
+		this.pkIndex = pkIndex;
+		this.cpTable = cpTable;
+		this.needFNSet = true;
+		this.fnSet = fnSet;
+		this.logDir = null;
 	}
 	
 	public UnfoldedPatternTree_ET[] run(String[] keywords, int k, boolean log) throws IOException {
 		if (keywords == null || keywords.length < 2 || k < 1) {
 			System.out.println("Error: invalid inputs.");
 			return null;
-		}
-		Date now = new Date();
-		if (log) { // 如果需要日志就初始化logWriter
-			logWriter = new BufferedWriter(new FileWriter(LOG_FILE	+ now.toString().replaceAll(":", "-") + " prob search log.txt"));
 		}
 		try {
 			PKIndexTypedEntry[] entries = new PKIndexTypedEntry[keywords.length];
@@ -97,20 +122,20 @@ public class SGProbSearchTypedAlgorithm {
 				System.out.println("Error: The entry of the keyword #" + i + " is null.");
 				System.exit(1);
 			}
-			if (logWriter != null) {
-				logWriter.write("*****************************************************");
-				logWriter.newLine();
-				logWriter.write("The initial search paths of the keyword #" + i + ": ");
-				logWriter.newLine();
-			}
+//			if (logWriter != null) {
+//				logWriter.write("The initial search paths of the keyword #" + i + ": ");
+//				logWriter.newLine();
+//			}
 			heaps[i] = new SearchPathTypedPQ(i, graph, cpTable);
 			for (IndexedEdgeTyped edge : entry.getEdgeList()) {
 				SearchPathTyped sp = new SearchPathTyped(edge);
 				heaps[i].insert(sp);
-				if (logWriter != null) {
-					logWriter.write(sp.getString(graph));
-					logWriter.newLine();
-				}
+//				if (logWriter != null) {
+//					logWriter.write(sp.getString(graph));
+//					logWriter.newLine();
+//					logWriter.write("*****************************************************");
+//					logWriter.newLine();
+//				}
 			}
 		}
 	}
@@ -133,11 +158,11 @@ public class SGProbSearchTypedAlgorithm {
 			SearchPathTyped path = heaps[keywordID].next();
 			
 			// visit this vertex
-			if (logWriter != null) {
-				logWriter.write("[" + keywordID + "] ");
-				logWriter.write(path.getString(graph));
-				logWriter.newLine();
-			}
+//			if (logWriter != null) {
+//				logWriter.write("[" + keywordID + "] ");
+//				logWriter.write(path.getString(graph));
+//				logWriter.newLine();
+//			}
 			visit(keywordID, path);
 			
 			if (allResults.size() >= k && heaps[keywordID].peek() < peeks[keywordID]) {
@@ -151,7 +176,13 @@ public class SGProbSearchTypedAlgorithm {
 				UnfoldedPatternTree_ET[] topk = new UnfoldedPatternTree_ET[k];
 				for (int j = 0; j < k; j++) {
 					topk[j] = allResults.remove(0);
+					if (logWriter != null) {
+						logWriter.write(topk[j].getString(graph));
+						logWriter.newLine();
+					}
 				}
+				logWriter.write("*****************************************");
+				logWriter.newLine();
 				return topk;
 			}
 		}
@@ -160,7 +191,13 @@ public class SGProbSearchTypedAlgorithm {
 		int num = Math.min(allResults.size(), k);
 		for (int j = 0; j < num; j++) {
 			topk[j] = allResults.remove(0);
+			if (logWriter != null) {
+				logWriter.write(topk[j].getString(graph));
+				logWriter.newLine();
+			}
 		}
+		logWriter.write("*****************************************");
+		logWriter.newLine();
 		return topk;
 	}
 	
@@ -215,13 +252,6 @@ public class SGProbSearchTypedAlgorithm {
 				}
 			}
 		}
-//		int num = 0;
-//		if (keywordID == 0) {
-//			num = nums[1] * sr.get(1).size();
-//		}
-//		else {
-//			num = nums[0] * sr.get(0).size();
-//		}
 		
 		for (int i = 0; i < numOfCombinations; i++) {
 			SearchPathTyped[] sources = new SearchPathTyped[keywordNum];
@@ -242,7 +272,7 @@ public class SGProbSearchTypedAlgorithm {
 			}
 			else {
 				if (needFNSet) {
-					if (!fnSet.check(path.getNode(path.nodeNum() - 1), sources)) {
+					if (!fnSet.checkNodeSet(path.getNode(path.nodeNum() - 1), sources)) {
 						continue;
 					}
 				}
@@ -271,10 +301,10 @@ public class SGProbSearchTypedAlgorithm {
 			if (upperBound <= allResults.get(k - 1).getScore()) {
 				hub.disqualify();
 				vIt.remove();
-				if (logWriter != null) {
-					logWriter.write("Disqualified: " + candidate + ", upperBound: " + upperBound);
-					logWriter.newLine();
-				}
+//				if (logWriter != null) {
+//					logWriter.write("Disqualified: " + candidate + ", upperBound: " + upperBound);
+//					logWriter.newLine();
+//				}
 			}
 			stopTimes++;
 		}
@@ -358,9 +388,19 @@ public class SGProbSearchTypedAlgorithm {
 		}
 			
 		allResults.add(pos, answer);
+//		if (logWriter != null) {
+//			logWriter.write("add " + answer.getString(graph));
+//			logWriter.newLine();
+//		}
+	}
+	
+	public void closeLogWriter() {
 		if (logWriter != null) {
-			logWriter.write("add " + answer.getString(graph));
-			logWriter.newLine();
+			try {
+				logWriter.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

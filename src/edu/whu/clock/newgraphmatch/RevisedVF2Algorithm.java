@@ -1,5 +1,8 @@
 package edu.whu.clock.newgraphmatch;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import edu.whu.clock.generalsearch.SearchPath_ET;
@@ -9,15 +12,25 @@ import edu.whu.clock.newgraph.GraphManager;
 
 public class RevisedVF2Algorithm {
 
+	public final String logDir;
+	
 	private GraphManager graphManager;
 	private String[] keywords;
+	private BufferedWriter logWriter;
 //	private int pathCount; // 算法是从root开始，对每一条path分开调用递归函数进行匹配，pathCount是当前处理的path编号
 
 	public RevisedVF2Algorithm(GraphManager graphManager) {
 		this.graphManager = graphManager;
+		this.logDir = null;
+	}
+	
+	public RevisedVF2Algorithm(GraphManager graphManager, String logDir) throws IOException {
+		this.graphManager = graphManager;
+		this.logDir = logDir;
+		logWriter = new BufferedWriter(new FileWriter(logDir + "KG subtree matching.txt"));
 	}
 
-	public ResultTreeTyped run(String[] keywords, UnfoldedPatternTree_ET queryGraph) {
+	public ResultTreeTyped run(String[] keywords, UnfoldedPatternTree_ET queryGraph) throws IOException {
 		if (keywords.length != queryGraph.numOfPaths()) {
 			System.out.println("Error: the query graph has the wrong number of paths.");
 			return null;
@@ -80,6 +93,10 @@ public class RevisedVF2Algorithm {
 				}
 			}
 			if (result.isAllMatched()) {
+				if (logWriter != null) {
+					logWriter.write(result.getString(graphManager.entityGraphTyped));
+					logWriter.newLine();
+				}
 				return result;
 			}
 		}
@@ -175,7 +192,7 @@ public class RevisedVF2Algorithm {
 			if (type == edge.getType() 
 					&& out != edge.isOut() 
 					&& classNode == graphManager.instanceManager.getClassID(edge.getEnd())) {
-				int[] keyids = graphManager.eiIndex.getAinstID(keyword);
+				int[] keyids = graphManager.pkIndex.getNodesOnKG(keyword);
 				for (int k : keyids) {
 					if (edge.getEnd() == k) {
 						candidates.add(edge.getEnd());
@@ -213,6 +230,16 @@ public class RevisedVF2Algorithm {
 			else {
 				result.setNode(pathCount, index, candidates.get(0));
 				result.setMatched(pathCount, true);
+			}
+		}
+	}
+	
+	public void closeLogWriter() {
+		if (logWriter != null) {
+			try {
+				logWriter.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
 	}

@@ -11,7 +11,7 @@ import java.util.Comparator;
 import java.util.TreeMap;
 
 public class Fnesm {
-	public static final String FNESET_FILE_DIR = "D:/experiment data/knowledge graph explorer/dbpedia-old/fneset/minsupport5%_N=5/";
+	public static final String FNESET_FILE_DIR = "D:/experiment data/knowledge graph explorer/dbpedia-old/fneset/minsupport5%_N=4/";
 	public int line_amount;
 	static BufferedWriter bw;
 
@@ -72,7 +72,7 @@ public class Fnesm {
 
 	public EdgeHeadNode create_standard_database(EdgeHeadNode head) {
 		if (head == null) {
-			System.out.println("create_standard_databaseï¿½ï¿½ï¿½ï¿½Îªï¿½Õ£ï¿½");
+			System.out.println("create_standard_database²ÎÊýÎª¿Õ£¡");
 		}
 		EdgeHeadNode fromHead = head;
 		EdgeHeadNode toHead = null;
@@ -170,7 +170,7 @@ public class Fnesm {
 
 	public TreeMap<String, Integer> countValue(EdgeHeadNode deduplicatedDB) {
 		if (deduplicatedDB == null)
-			System.out.println("countValueï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½!\n");
+			System.out.println("countValue²ÎÊýÎª¿Õ!\n");
 		TreeMap<String, Integer> count = new TreeMap<String, Integer>(
 				new Comparator<String>() {
 
@@ -226,6 +226,55 @@ public class Fnesm {
 		return count;
 	}
 
+	public void dmine4(EdgeHeadNode db, String[] prefix, int N)
+			throws IOException {
+		int n = N;
+		n++;
+		if (n > 4)
+			return;
+		if (db == null) {
+			System.out.println("database is null!\n");
+			return;
+		}
+
+		String[] pre;
+		pre = new String[4];
+
+		for (int k = 0; k < 4; k++) {
+			pre[k] = prefix[k];
+		}
+
+		EdgeHeadNode res1 = create_standard_database(db);
+
+		TreeMap<String, Integer> co = countValue(res1);
+		for (String key : co.keySet()) {
+			if (co.get(key) >= line_amount * 0.05) {
+				for (int k = 0; k < 4; k++) {
+					pre[k] = prefix[k];
+				}
+				int j = 0;
+				if (pre[0] != null) {
+
+					while (pre[j] != null) {
+						bw.write(pre[j] + " ");
+						bw.flush();
+						j++;
+					}
+					bw.write(key + " (" + co.get(key) + ")");
+					bw.newLine();
+					bw.flush();
+					pre[j] = key;
+				} else
+					pre[0] = key;
+
+				EdgeHeadNode pdb = create_project_database(db, key);
+
+				dmine4(pdb, pre, n);
+			}
+		}
+
+	}
+	
 	public void dmine5(EdgeHeadNode db, String[] prefix, int N)
 			throws IOException {
 		int n = N;
@@ -287,7 +336,7 @@ public class Fnesm {
 			System.out.println(f.getName());
 			if (f.length() != 0) {
 				String[] pref;
-				pref = new String[6];
+				pref = new String[4];
 				EdgeHeadNode he1 = fnesm
 						.file_to_db("D:/experiment data/knowledge graph explorer/dbpedia-old/fnsm_db/"
 								+ f.getName());
@@ -296,7 +345,7 @@ public class Fnesm {
 				// String[] filename = f.getName().split("_");
 				bw = new BufferedWriter(new FileWriter(FNESET_FILE_DIR
 						+ f.getName()));
-				fnesm.dmine5(he1, pref, 0);
+				fnesm.dmine4(he1, pref, 0);
 			}
 			bw.close();
 		}

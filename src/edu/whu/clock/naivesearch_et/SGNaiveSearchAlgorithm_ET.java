@@ -3,7 +3,6 @@ package edu.whu.clock.naivesearch_et;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -13,15 +12,15 @@ import edu.whu.clock.generalsearch.UnfoldedPatternTree_ET;
 import edu.whu.clock.graphsearch.util.UnderflowException;
 import edu.whu.clock.newgraph.SummaryGraphTyped;
 import edu.whu.clock.newprobindex.IndexedEdgeTyped;
-import edu.whu.clock.newprobindex.PKIndexManager;
+import edu.whu.clock.newprobindex.PKIndexManager_EdgeCount;
 import edu.whu.clock.newprobindex.PKIndexTypedEntry;
 
 public class SGNaiveSearchAlgorithm_ET {
-	
-	public static final String LOG_FILE = "D:/experiment data/knowledge graph explorer/dbpedia-old/naive search logs/";
+
+	public final String logDir;
 	
 	private final SummaryGraphTyped graph;
-	private final PKIndexManager pkIndex;
+	private final PKIndexManager_EdgeCount pkIndex;
 	private BufferedWriter logWriter;
 
 	private int keywordNum;
@@ -36,19 +35,24 @@ public class SGNaiveSearchAlgorithm_ET {
 	public long visitTimes = 0;
 	public long stopTimes = 0; 
 
-	public SGNaiveSearchAlgorithm_ET(SummaryGraphTyped graph, PKIndexManager pkIndex) {
+	public SGNaiveSearchAlgorithm_ET(SummaryGraphTyped graph, PKIndexManager_EdgeCount pkIndex, String logDir) throws IOException {
 		this.graph = graph;
 		this.pkIndex = pkIndex;
+		this.logDir = logDir;
+		// 如果需要日志就初始化logWriter
+		logWriter = new BufferedWriter(new FileWriter(logDir + "SG naive topk search.txt"));
+	}
+	
+	public SGNaiveSearchAlgorithm_ET(SummaryGraphTyped graph, PKIndexManager_EdgeCount pkIndex) {
+		this.graph = graph;
+		this.pkIndex = pkIndex;
+		this.logDir = null;
 	}
 	
 	public UnfoldedPatternTree_ET[] run(String[] keywords, int k, boolean log) throws IOException {
 		if (keywords == null || keywords.length < 2 || k < 1) {
 			System.out.println("Error: invalid inputs.");
 			return null;
-		}
-		Date now = new Date();
-		if (log) { // 如果需要日志就初始化logWriter
-			logWriter = new BufferedWriter(new FileWriter(LOG_FILE	+ now.toString().replaceAll(":", "-") + " naive search log.txt"));
 		}
 		try {
 			PKIndexTypedEntry[] entries = new PKIndexTypedEntry[keywords.length];
@@ -80,20 +84,20 @@ public class SGNaiveSearchAlgorithm_ET {
 				System.out.println("Error: The entry of the keyword #" + i + " is null.");
 				System.exit(1);
 			}
-			if (logWriter != null) {
-				logWriter.write("*****************************************************");
-				logWriter.newLine();
-				logWriter.write("The initial search paths of the keyword #" + i + ": ");
-				logWriter.newLine();
-			}
+//			if (logWriter != null) {
+//				logWriter.write("The initial search paths of the keyword #" + i + ": ");
+//				logWriter.newLine();
+//			}
 			heaps[i] = new NaiveSearchPathPQ_ET(i, graph);
 			for (IndexedEdgeTyped edge : entry.getEdgeList()) {
 				NaiveSearchPath_ET sp = new NaiveSearchPath_ET(edge);
 				heaps[i].insert(sp);
-				if (logWriter != null) {
-					logWriter.write(sp.getString(graph));
-					logWriter.newLine();
-				}
+//				if (logWriter != null) {
+//					logWriter.write(sp.getString(graph));
+//					logWriter.newLine();
+//					logWriter.write("*****************************************************");
+//					logWriter.newLine();
+//				}
 			}
 		}
 	}
@@ -116,11 +120,11 @@ public class SGNaiveSearchAlgorithm_ET {
 			NaiveSearchPath_ET path = heaps[keywordID].next();
 			
 			// visit this vertex
-			if (logWriter != null) {
-				logWriter.write("[" + keywordID + "] ");
-				logWriter.write(path.getString(graph));
-				logWriter.newLine();
-			}
+//			if (logWriter != null) {
+//				logWriter.write("[" + keywordID + "] ");
+//				logWriter.write(path.getString(graph));
+//				logWriter.newLine();
+//			}
 			visit(keywordID, path);
 			
 			if (allResults.size() >= k && heaps[keywordID].peek() > peeks[keywordID]) {
@@ -135,7 +139,13 @@ public class SGNaiveSearchAlgorithm_ET {
 				UnfoldedPatternTree_ET[] topk = new UnfoldedPatternTree_ET[k];
 				for (int j = 0; j < k; j++) {
 					topk[j] = allResults.remove(0);
+					if (logWriter != null) {
+						logWriter.write(topk[j].getString(graph));
+						logWriter.newLine();
+					}
 				}
+				logWriter.write("*****************************************");
+				logWriter.newLine();
 //				System.out.println("visit times: " + visitTimes);
 				return topk;
 			}
@@ -145,7 +155,13 @@ public class SGNaiveSearchAlgorithm_ET {
 		int num = Math.min(allResults.size(), k);
 		for (int j = 0; j < num; j++) {
 			topk[j] = allResults.remove(0);
+			if (logWriter != null) {
+				logWriter.write(topk[j].getString(graph));
+				logWriter.newLine();
+			}
 		}
+		logWriter.write("*****************************************");
+		logWriter.newLine();
 //		System.out.println("visit times: " + visitTimes);
 		return topk;
 	}
@@ -201,13 +217,6 @@ public class SGNaiveSearchAlgorithm_ET {
 				}
 			}
 		}
-//		int num = 0;
-//		if (keywordID == 0) {
-//			num = nums[1] * sr.get(1).size();
-//		}
-//		else {
-//			num = nums[0] * sr.get(0).size();
-//		}
 		
 		for (int i = 0; i < numOfCombinations; i++) {
 			NaiveSearchPath_ET[] sources = new NaiveSearchPath_ET[keywordNum];
@@ -233,37 +242,6 @@ public class SGNaiveSearchAlgorithm_ET {
 		}
 	}
 	
-//	private void stop(int keywordID) throws UnderflowException, IOException {
-//		if (!heaps[keywordID].hasNext() || heaps[keywordID].peek() >= peeks[keywordID]) {
-//			Iterator<Short> vIt = candidates.iterator();
-//			while (vIt.hasNext()) {
-//				short candidate = vIt.next();
-//				NaiveSearchPathHub_ET hub = records[candidate];
-//				int upperBound = Integer.MAX_VALUE;
-//				if (hub.isComplete()) {
-//					for (int j = 0; j< keywordNum; j++) {
-//						if (upperBound > upperBound(hub, j)) {
-//							upperBound = upperBound(hub, j);
-//						}
-//					}
-//				}
-//				else {
-//					upperBound = upperBound(hub);
-//				}
-//				if (upperBound >= allResults.get(k - 1).getScore()) {
-//					hub.disqualify();
-//					vIt.remove();
-//					if (logWriter != null) {
-//						logWriter.write("Disqualified: " + candidate + ", upperBound: " + upperBound);
-//						logWriter.newLine();
-//					}
-//				}
-//				stopTimes++;
-//			}
-//			peeks[keywordID] = heaps[keywordID].hasNext() ? heaps[keywordID].peek() : 10000; //如果堆为空，则距离无限大
-//		}
-//	}
-	
 	private void stop() throws UnderflowException, IOException {
 //		System.out.println("trying to stop. candidate#: " + candidates.size());
 		Iterator<Short> vIt = candidates.iterator();
@@ -284,10 +262,10 @@ public class SGNaiveSearchAlgorithm_ET {
 			if (upperBound >= allResults.get(k - 1).getScore()) {
 				hub.disqualify();
 				vIt.remove();
-				if (logWriter != null) {
-					logWriter.write("Disqualified: " + candidate + ", upperBound: " + upperBound);
-					logWriter.newLine();
-				}
+//				if (logWriter != null) {
+//					logWriter.write("Disqualified: " + candidate + ", upperBound: " + upperBound);
+//					logWriter.newLine();
+//				}
 			}
 			stopTimes++;
 		}
@@ -340,9 +318,19 @@ public class SGNaiveSearchAlgorithm_ET {
 		}
 			
 		allResults.add(pos, answer);
+//		if (logWriter != null) {
+//			logWriter.write("add " + answer.getString(graph));
+//			logWriter.newLine();
+//		}
+	}
+	
+	public void closeLogWriter() {
 		if (logWriter != null) {
-			logWriter.write("add " + answer.getString(graph));
-			logWriter.newLine();
+			try {
+				logWriter.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

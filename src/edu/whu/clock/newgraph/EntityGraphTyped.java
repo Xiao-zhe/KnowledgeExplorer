@@ -2,12 +2,13 @@ package edu.whu.clock.newgraph;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.TreeMap;
 import java.util.TreeSet;
+
+import edu.whu.clock.newprobindex.IndexedEdgeTyped;
 
 public class EntityGraphTyped implements Serializable {
 
@@ -15,18 +16,22 @@ public class EntityGraphTyped implements Serializable {
 
 	private int edgeNum;
 
-	private EntityGraphEdgeTyped[][] allEdges;  //allEdges[id] means all endpoints with id as starting point
+	private EntityGraphEdgeTyped[][] allEdges;
+	private TreeMap<IndexedEdgeTyped, Integer> counter;
 	private InstanceManager instanceManager;
-	private HashMap<String, Short> type2id;
-	private HashMap<Short, String> id2type;
+	private EdgeTypeManager etypeManager;
+//	private HashMap<String, Short> type2id;
+//	private HashMap<Short, String> id2type;
 
-	public EntityGraphTyped(InstanceManager instanceManager) {
+	public EntityGraphTyped(InstanceManager instanceManager, EdgeTypeManager etypeManager) {
 		this.edgeNum = 0;
 		this.instanceManager = instanceManager;
+		this.etypeManager = etypeManager;
 		this.allEdges = new EntityGraphEdgeTyped[instanceManager
 				.getInstanceNum()][];
-		this.type2id = new HashMap<String, Short>();
-		this.id2type = new HashMap<Short, String>();
+		counter = new TreeMap<IndexedEdgeTyped, Integer>();
+//		this.type2id = new HashMap<String, Short>();
+//		this.id2type = new HashMap<Short, String>();
 	}
 
 	public int getEdgeNum() {
@@ -39,18 +44,18 @@ public class EntityGraphTyped implements Serializable {
 
 	public void addAllEdges(String dir) {
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(dir
-					+ "/relationship_type.txt")); // begin to import the
-													// existing edge types
-			String line = null;
-			short id = 0;
-			while (br.ready()) {
-				line = br.readLine();
-				id++;
-				type2id.put(line, id);
-				id2type.put(id, line);
-			}
-			br.close();
+//			br = new BufferedReader(new FileReader(dir
+//					+ "/relationship_type.txt")); // begin to import the
+//													// existing edge types
+//			String line = null;
+//			short id = 0;
+//			while (br.ready()) {
+//				line = br.readLine();
+//				id++;
+//				type2id.put(line, id);
+//				id2type.put(id, line);
+//			}
+//			br.close();
 
 			ArrayList<TreeSet<EntityGraphEdgeTyped>> temp = new ArrayList<TreeSet<EntityGraphEdgeTyped>>(
 					instanceManager.getInstanceNum());
@@ -58,30 +63,36 @@ public class EntityGraphTyped implements Serializable {
 				temp.add(new TreeSet<EntityGraphEdgeTyped>());
 			}
 
-			br = new BufferedReader(new FileReader(dir
+			BufferedReader br = new BufferedReader(new FileReader(dir
 					+ "/instance_relationship_mapping.txt")); // begin to import
 																// the edges
 																// between the
 																// class nodes
+			String line = null;
 			String[] elements = null;
 			EntityGraphEdgeTyped edge = null;
 			TreeSet<EntityGraphEdgeTyped> set = null;
 			while (br.ready()) {
 				line = br.readLine();
 				elements = line.split(" ");
+				int startNode = instanceManager.getInstanceID(elements[0]);
+				int endNode = instanceManager.getInstanceID(elements[2]);
+				short edgeType = etypeManager.getID(elements[1]);
 				edge = new EntityGraphEdgeTyped(
-						instanceManager.getInstanceID(elements[2]),
-						type2id.get(elements[1]), true);
-				set = temp.get(instanceManager.getInstanceID(elements[0]));
+						endNode,
+						edgeType, true);
+				set = temp.get(startNode);
 				if (set.contains(edge)) { // duplicated lines exist
 					continue;
 				}
 				set.add(edge);
+				count(startNode, endNode, edgeType, true);
 				edge = new EntityGraphEdgeTyped(
-						instanceManager.getInstanceID(elements[0]),
-						type2id.get(elements[1]), false);
-				set = temp.get(instanceManager.getInstanceID(elements[2]));
+						startNode,
+						edgeType, false);
+				set = temp.get(endNode);
 				set.add(edge);
+				count(endNode, startNode, edgeType, false);
 				edgeNum++;
 			}
 			br.close();
@@ -101,6 +112,17 @@ public class EntityGraphTyped implements Serializable {
 		System.out.println("Num of nodes: " + getNodeNum());
 		System.out.println("Num of edges: " + getEdgeNum());
 	}
+	
+	private void count(int startNode, int endNode, short edgeType, boolean isOut) {
+		IndexedEdgeTyped newEdge = new IndexedEdgeTyped(instanceManager.getClassID(startNode),
+				instanceManager.getClassID(endNode), edgeType, isOut);
+		if (counter.containsKey(newEdge)) {
+			counter.put(newEdge, counter.get(newEdge) + 1);
+		}
+		else {
+			counter.put(newEdge, 1);
+		}
+	}
 
 	public EntityGraphEdgeTyped[] getNeighbors(int start) {
 		return allEdges[start];
@@ -114,6 +136,10 @@ public class EntityGraphTyped implements Serializable {
 		return this.instanceManager;
 	}
 	
+	public EdgeTypeManager getEdgeTypeManager() {
+		return this.etypeManager;
+	}
+	
 	public boolean haveEdgeBetweenInstanceAndClass(int instanceID, int classID) {
 		EntityGraphEdgeTyped[] neighboor = allEdges[instanceID];
 		for (EntityGraphEdgeTyped edge : neighboor) {
@@ -123,21 +149,26 @@ public class EntityGraphTyped implements Serializable {
 		}
 		return false;
 	}
-	public int edgeNumBetweeTwoClass(short classA,short classB){
-		int[] instancesA = instanceManager.getInstanceSet(classA);
-		int num = 0;
-		for(int insA: instancesA){	
-			EntityGraphEdgeTyped[] neighboor = allEdges[insA];
-			for (EntityGraphEdgeTyped edge : neighboor) {
-				if (classB == instanceManager.getClassID(edge.getEnd())) {
-					num++;
-				}
-			}
-		}
-		return num;
-	}
-
-	// public ProbSchemaGraphEdge findEdge(int start, int end) // ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ò±ï¿½
+	
+	public int instNumOfSummaryEdge(IndexedEdgeTyped edge){
+    	return counter.get(edge);
+    }
+	
+    public int numOfSummaryEdge(short classA, short classB, short typeid, boolean isOut){
+    	int count= 0;
+    	int[] instances = instanceManager.getInstanceSet(classA);
+    	
+    	for(int ins: instances){
+    		EntityGraphEdgeTyped[] neighbors = getNeighbors(ins);
+    		for(EntityGraphEdgeTyped edge: neighbors){
+    			if((instanceManager.getClassID(edge.getEnd())==classB)&&(edge.getType()==typeid)&&(edge.isOut()==isOut))
+    				count++;
+    		}
+    	}
+    	System.out.println("number of edge:"+count);
+    	return count;
+    }
+	// public ProbSchemaGraphEdge findEdge(int start, int end) // ¼ÓÁËÒ»¸öÕÒ±ß
 	// {
 	// ProbSchemaGraphEdge head = allEdges[start];
 	// ProbSchemaGraphEdge current = head.getNextEdge();
@@ -209,36 +240,36 @@ public class EntityGraphTyped implements Serializable {
 	// }
 	// }
 
-	public static void main(String[] args) throws IOException,
-			ClassNotFoundException {
-		// String dir = "D:/testing example";
-		String dir = "D:/dbpedia/clean";
-		long t0 = System.currentTimeMillis() / 1000;
-		ClassManager classManager = new ClassManager();
-		classManager.load(dir);
-		InstanceManager instanceManager = new InstanceManager();
-		instanceManager.load(dir, classManager);
-
-		EntityGraphTyped graph = new EntityGraphTyped(instanceManager);
-		graph.addAllEdges(dir);
-		// graph.write2file("D://test3.txt");
-		// FileOutputStream fos = new
-		// FileOutputStream("D:/SerializedFile/EntityGraphTyped.ser");
-		// ObjectOutputStream oos = new ObjectOutputStream(fos);
-		// oos.writeObject(graph);
-		// oos.close();
-		long t1 = System.currentTimeMillis() / 1000;
-		System.out.println("addAllEdgesÊ±ï¿½ä£º" + (t1 - t0) + "ï¿½ï¿½");// 19seconds
-		// FileInputStream fis = new FileInputStream(
-		// "D:/SerializedFile/EntityGraphTyped.ser");
-		// ObjectInputStream ois = new ObjectInputStream(fis);
-		// EntityGraphTyped graphTyped = (EntityGraphTyped) ois.readObject();
-		// ois.close();
-		// long t2 = System.currentTimeMillis()/1000;
-		// System.out.println("ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½Ê±ï¿½ä£º"+(t2-t1)+"ï¿½ï¿½");//57seconds
-		EntityGraphEdgeTyped[] set = graph.getNeighbors("Ninewells_Hospital");
-		for (EntityGraphEdgeTyped str : set) {
-			System.out.println(instanceManager.getInstanceName(str.getEnd()));
-		}
-	}
+//	public static void main(String[] args) throws IOException,
+//			ClassNotFoundException {
+//		// String dir = "D:/testing example";
+//		String dir = "D:/dbpedia/clean";
+//		long t0 = System.currentTimeMillis() / 1000;
+//		ClassManager classManager = new ClassManager();
+//		classManager.load(dir);
+//		InstanceManager instanceManager = new InstanceManager();
+//		instanceManager.load(dir, classManager);
+//
+//		EntityGraphTyped graph = new EntityGraphTyped(instanceManager);
+//		graph.addAllEdges(dir);
+//		// graph.write2file("D://test3.txt");
+//		// FileOutputStream fos = new
+//		// FileOutputStream("D:/SerializedFile/EntityGraphTyped.ser");
+//		// ObjectOutputStream oos = new ObjectOutputStream(fos);
+//		// oos.writeObject(graph);
+//		// oos.close();
+//		long t1 = System.currentTimeMillis() / 1000;
+//		System.out.println("addAllEdgesÊ±¼ä£º" + (t1 - t0) + "Ãë");// 19seconds
+//		// FileInputStream fis = new FileInputStream(
+//		// "D:/SerializedFile/EntityGraphTyped.ser");
+//		// ObjectInputStream ois = new ObjectInputStream(fis);
+//		// EntityGraphTyped graphTyped = (EntityGraphTyped) ois.readObject();
+//		// ois.close();
+//		// long t2 = System.currentTimeMillis()/1000;
+//		// System.out.println("¶ÁÐòÁÐ»¯Ê±¼ä£º"+(t2-t1)+"Ãë");//57seconds
+//		EntityGraphEdgeTyped[] set = graph.getNeighbors("Ninewells_Hospital");
+//		for (EntityGraphEdgeTyped str : set) {
+//			System.out.println(instanceManager.getInstanceName(str.getEnd()));
+//		}
+//	}
 }

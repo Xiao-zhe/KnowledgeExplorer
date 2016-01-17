@@ -55,11 +55,7 @@ public class EntityGraphEdgeTyped implements Serializable,
 			}
 		}
 	}
-//	@Override
-//   public int hashCode(){ 
-//	   return this.getEnd();
-	   
-//   }
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof EntityGraphEdgeTyped) {
@@ -70,6 +66,15 @@ public class EntityGraphEdgeTyped implements Serializable,
 			}
 		}
 		return false;
+	}
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + end;
+		result = prime * result + type;
+		result = prime * result + (out ? 1 : 0);
+		return result;
 	}
 	
 }
